@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+    stages{
+        stage ("Clone Code"){
+            steps{
+                echo "Clone the code from git hub"
+                git url: "https://github.com/tparshu/django-notes-app.git/", branch: "main"
+            }
+        }
+        stage ("Build"){
+            steps{
+                echo "Build the Code"
+                sh "docker build -t my-node-app ."
+            }
+        }
+        stage ("Push the Code"){
+            steps{
+                echo "pushing the code to DockerHub"
+                withCredentials([usernamePassword(credentialsId:"Dockerhub",passwordVariable:"DockerhubPass",usernameVariable:"DockerhubUser")])
+                {
+                    sh "docker tag my-node-app ${env.DockerHubUser}/my-node-app:latest"
+                sh "docker login -u ${env.DockerhubUser} -p ${env.DockerhubPass}"
+                sh "docker push ${env.dockerHubUser}/my-node-app:latest"
+                }
+            }
+        }
+        stage ("Deploy"){
+            steps{
+                echo "Deploy the Code to Docker"
+                sh "docker run -d -p 8000:8000 tparshu/my-node-app:latest"
+            }
+        }
+    }
+}
